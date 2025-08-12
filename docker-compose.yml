@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ironforge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432" # Expose PostgreSQL port for direct access if needed
+
+  supabase:
+    image: supabase/supabase:latest
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/ironforge
+      JWT_SECRET: your-jwt-secret # Replace with a strong secret
+      ANON_KEY: your-anon-key # Replace with your Supabase anon key
+      SERVICE_ROLE_KEY: your-service-role-key # Replace with your Supabase service role key
+    ports:
+      - "8000:8000" # Supabase API port
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/ironforge
+      NEXT_PUBLIC_SUPABASE_URL: http://supabase:8000
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: your-anon-key # Replace with your Supabase anon key
+    depends_on:
+      - supabase
