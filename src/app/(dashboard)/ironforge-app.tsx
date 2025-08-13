@@ -25,6 +25,7 @@ import WorkoutHistory from './workout-history'; // Import WorkoutHistory
 import ProgressCharts from './progress-charts'; // Import ProgressCharts
 import AnalyticsDashboard from './analytics-dashboard'; // Import AnalyticsDashboard
 import Goals from "./goals"; // Import Goals
+import Exercises from './exercises'; // Import Exercises
 
 
 const IronForgeApp = () => {
@@ -130,6 +131,7 @@ const IronForgeApp = () => {
             { id: 'analytics', label: 'Analytics Dashboard', icon: BarChart3 }, // Added Analytics Dashboard
             { id: 'calculator', label: 'Plate Calculator', icon: Calculator },
             { id: "goals", label: "Goals", icon: TrendingUp },  // Added Goals
+            { id: "exercises", label: "Exercises", icon: Activity },  // Added Exercises
             { id: 'settings', label: 'Settings', icon: Settings }
           ].map(({ id, label, icon: Icon }) => (
             <button
@@ -371,6 +373,10 @@ const IronForgeApp = () => {
       
       case "goals":
         return <Goals />;
+      
+      case 'exercises':
+        return <Exercises />;
+
 
       case 'settings':
         return (
