@@ -1,9 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import IronForgeApp from './ironforge-app';
-
-export default function DashboardRootPage() {
-  return (
-    <IronForgeApp />
-  );
+export default function DashboardIndex() {
+  redirect("/workouts");
 }

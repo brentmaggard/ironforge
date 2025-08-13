@@ -1,16 +1,3 @@
 "use client";
-
-import IronForgeApp from "../ironforge-app";
-
-export default function ProgressPage() {
-  return (
-    <IronForgeApp
-      activeTab="progress"
-      setActiveTab={() => {}}
-      currentWorkout={null}
-      setCurrentWorkout={() => {}}
-      showProgramBuilder={false}
-      setShowProgramBuilder={() => {}}
-    />
-  );
-}
+import ProgressCharts from "../progress-charts";
+export default function ProgressPage() { return <ProgressCharts />; }

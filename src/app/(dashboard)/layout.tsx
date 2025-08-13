@@ -3,37 +3,29 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Dumbbell, Menu, X, Timer, User,
-  Calendar, BarChart3, LineChart, Activity, TrendingUp, Settings, Calculator,
-} from "lucide-react";
+// Keep these imports for the HEADER icons
+import { Dumbbell, Menu, X, Timer, User } from "lucide-react";
+// Use the shared nav config for links
+import { NAV_ITEMS } from "@/config/nav"; // if your alias isn't set, change to ../../config/nav
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { id: "workouts", label: "Workouts", icon: Dumbbell },
-    { id: "programs", label: "Programs", icon: Calendar },
-    { id: "history", label: "Workout History", icon: BarChart3 },
-    { id: "progress", label: "Progress Charts", icon: LineChart },
-    { id: "analytics", label: "Analytics Dashboard", icon: BarChart3 },
-    { id: "calculator", label: "Plate Calculator", icon: Calculator },
-    { id: "goals", label: "Goals", icon: TrendingUp },
-    { id: "exercises", label: "Exercises", icon: Activity },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
-
   return (
     <div className="min-h-dvh bg-gray-50 grid grid-rows-[auto_1fr_auto] md:grid-rows-[auto_1fr] md:grid-cols-[260px_1fr]">
-      {/* Top bar */}
+      {/* Top bar (HEADER) */}
       <header className="col-span-full sticky top-0 z-30 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen((s) => !s)} className="md:hidden p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
+            <button
+              onClick={() => setSidebarOpen((s) => !s)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+              aria-label="Open menu"
+            >
               <Menu size={22} />
             </button>
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/workouts" className="flex items-center gap-2">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600">
                 <Dumbbell className="text-white" size={18} />
               </span>
@@ -51,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* Sidebar (desktop) + overlay (mobile) */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -67,8 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
         <nav className="p-3 space-y-1">
-          {navItems.map(({ id, label, icon: Icon }) => {
-            const href = `/${id}`;
+          {NAV_ITEMS.map(({ id, label, href, icon: Icon }) => {
             const isActive = pathname === href;
             return (
               <Link
@@ -95,26 +86,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Bottom nav (mobile) */}
       <nav className="md:hidden sticky bottom-0 z-30 border-t bg-white">
         <ul className="grid grid-cols-5 text-xs">
-          {navItems
-            .filter((n) => ["workouts", "programs", "progress", "goals", "settings"].includes(n.id))
-            .map(({ id, label, icon: Icon }) => {
-              const href = `/${id}`;
-              const isActive = pathname === href;
-              return (
-                <li key={id}>
-                  <Link
-                    href={href}
-                    className={`flex h-12 w-full flex-col items-center justify-center ${
-                      isActive ? "text-blue-700" : "text-gray-600"
-                    }`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Icon size={18} />
-                    <span className="mt-0.5">{label.split(" ")[0]}</span>
-                  </Link>
-                </li>
-              );
-            })}
+          {NAV_ITEMS.filter((n) => n.mobile).map(({ id, label, href, icon: Icon }) => {
+            const isActive = pathname === href;
+            return (
+              <li key={id}>
+                <Link
+                  href={href}
+                  className={`flex h-12 w-full flex-col items-center justify-center ${
+                    isActive ? "text-blue-700" : "text-gray-600"
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon size={18} />
+                  <span className="mt-0.5">{label.split(" ")[0]}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>
