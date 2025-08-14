@@ -18,12 +18,15 @@ export default function LoginPage() {
     // build redirect URL for the magic link
     const redirectTo =
       typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback`
+        ? `${window.location.origin}/callback`
         : undefined;
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo },
+      options: { 
+        emailRedirectTo: redirectTo,
+        shouldCreateUser: true,
+      },
     });
 
     if (error) {

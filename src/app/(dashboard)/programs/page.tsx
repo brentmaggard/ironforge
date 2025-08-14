@@ -2,7 +2,7 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import ProgramBuilder from "../program-builder";
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export default function ProgramsPage() {
   const [showProgramBuilder, setShowProgramBuilder] = React.useState(false);

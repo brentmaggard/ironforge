@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-08-14T22:48:06.912Z",
+  "totalIssues": 1,
+  "issuesByPriority": {
+    "high": 1,
+    "medium": 0,
+    "low": 0
+  },
+  "issues": [
+    {
+      "title": "Navigation Failed",
+      "description": "Failed to navigate to goals page: net::ERR_CONNECTION_REFUSED at http://localhost:3001/goals",
+      "priority": "high",
+      "test": "",
+      "timestamp": "2025-08-14T22:48:06.723Z"
+    }
+  ]
+}

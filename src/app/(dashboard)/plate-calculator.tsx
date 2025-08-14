@@ -69,14 +69,14 @@ const PlateCalculator = () => {
       targetWeight,
       plateWeight: targetPlateWeight,
       weightPerSide,
-      plates: [],
+      plates: [] as Array<{ count: number; totalWeight: number; weight: number; unit: string; color: string; }>,
       actualWeight: barbellWeight,
       difference: 0,
       possible: true
     };
 
     let remainingWeight = weightPerSide;
-    const usedPlates = [];
+    const usedPlates: Array<{ count: number; totalWeight: number; weight: number; unit: string; color: string; }> = [];
     const plateInventory = [...availablePlates];
 
     // Greedy algorithm to find plate combination
@@ -108,7 +108,7 @@ const PlateCalculator = () => {
   }, [targetWeight, units, activeBarbell, availablePlates]);
 
   // Color mapping for plates
-  const getPlateColor = (color, weight) => {
+  const getPlateColor = (color: string, weight: number): string => {
     const colorMap = {
       red: 'bg-red-500',
       blue: 'bg-blue-500',
