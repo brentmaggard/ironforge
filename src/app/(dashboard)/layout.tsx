@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button className="p-2 rounded-lg hover:bg-gray-100" aria-label="Timer">
               <Timer size={18} className="text-gray-600" />
             </button>
-            <button className="p-2 rounded-lg hover:bg-gray-100" aria-label="Account">
+             <button className="p-2 rounded-lg hover:bg-gray-100" aria-label="Account">
               <User size={18} className="text-gray-600" />
             </button>
           </div>
