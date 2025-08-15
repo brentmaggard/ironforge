@@ -96,6 +96,43 @@ ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All users can view exercises" ON exercises
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Create goal_progress table for tracking progress over time
+CREATE TABLE IF NOT EXISTS goal_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  value DECIMAL(10,2) NOT NULL CHECK (value >= 0),
+  notes TEXT,
+  recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_goal_progress_goal_id ON goal_progress(goal_id);
+CREATE INDEX idx_goal_progress_user_id ON goal_progress(user_id);
+CREATE INDEX idx_goal_progress_recorded_at ON goal_progress(recorded_at);
+CREATE INDEX idx_goal_progress_goal_recorded ON goal_progress(goal_id, recorded_at);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE goal_progress ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for goal_progress
+-- Users can only see their own goal progress
+CREATE POLICY "Users can view their own goal progress" ON goal_progress
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Users can insert their own goal progress
+CREATE POLICY "Users can insert their own goal progress" ON goal_progress
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Users can update their own goal progress
+CREATE POLICY "Users can update their own goal progress" ON goal_progress
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Users can delete their own goal progress
+CREATE POLICY "Users can delete their own goal progress" ON goal_progress
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Sample goals data (optional - remove if you don't want sample data)
 -- You can uncomment these if you want some sample goals for testing
 /*

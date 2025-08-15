@@ -1,0 +1,172 @@
+{
+  "timestamp": "2025-08-15T00:34:56.937Z",
+  "summary": {
+    "passed": 23,
+    "failed": 8,
+    "errors": 1,
+    "successRate": "74.2"
+  },
+  "details": [
+    {
+      "test": "Goals heading visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "New Goal button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Bench Press goal visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Running goal visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Shows active goals count",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Progress percentages visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "New Goal button clicked",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Goal creation UI appears",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Form elements present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Goal items found in DOM",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Clickable goal elements present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Edit button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Archive button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Copy button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Delete button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Bench Press progress (82%) visible",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Perfect progress (100%) visible",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Current/Target values shown",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Target dates visible",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Progress Calculations",
+      "passed": false,
+      "details": "el.className.includes is not a function\npptr:evaluate;GoalsPageTester.test5_ProgressCalculations%20(%2FUsers%2Fbrentmaggard%2FDocuments%2Fprojects%2FIronForge%2Fironforge%2Fgoals-page-tests-fixed.js%3A268%3A54):9:41"
+    },
+    {
+      "test": "Goals heading visible on mobile",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "New Goal button accessible on mobile",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Page adapts to tablet viewport",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Button hover effects work",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Page has proper styling",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "No significant console errors",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Page loads in reasonable time",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "DOM ready quickly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Page has proper heading structure",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Buttons have accessible text",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Page has main landmark",
+      "passed": true,
+      "details": ""
+    }
+  ],
+  "errors": [
+    {
+      "category": "Test 5",
+      "message": "el.className.includes is not a function\npptr:evaluate;GoalsPageTester.test5_ProgressCalculations%20(%2FUsers%2Fbrentmaggard%2FDocuments%2Fprojects%2FIronForge%2Fironforge%2Fgoals-page-tests-fixed.js%3A268%3A54):9:41"
+    }
+  ]
+}

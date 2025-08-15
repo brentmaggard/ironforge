@@ -177,6 +177,7 @@ export function useGoals(includeArchived = false) {
   const archiveMutation = useMutation({
     mutationFn: (id: string) => updateGoal(id, { is_archived: true }),
     onSuccess: (data) => {
+      // Update current query cache
       queryClient.setQueryData<GoalsResponse>(queryKey, (old) => {
         if (!old) return old;
         if (includeArchived) {
@@ -194,6 +195,31 @@ export function useGoals(includeArchived = false) {
           };
         }
       });
+
+      // Also update the other query cache (includeArchived: true)
+      const archivedQueryKey = ['goals', true];
+      queryClient.setQueryData<GoalsResponse>(archivedQueryKey, (old) => {
+        if (!old) return old;
+        // Add to archived goals or update if already exists
+        const existingIndex = old.goals.findIndex(goal => goal.id === data.goal.id);
+        if (existingIndex >= 0) {
+          return {
+            ...old,
+            goals: old.goals.map(goal => 
+              goal.id === data.goal.id ? data.goal : goal
+            ),
+          };
+        } else {
+          return {
+            goals: [...old.goals, data.goal],
+            total: old.total + 1,
+          };
+        }
+      });
+
+      // Invalidate both queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      
       toast.success('Goal archived successfully!');
     },
     onError: (error) => {
@@ -205,6 +231,7 @@ export function useGoals(includeArchived = false) {
   const unarchiveMutation = useMutation({
     mutationFn: (id: string) => updateGoal(id, { is_archived: false }),
     onSuccess: (data) => {
+      // Update current query cache
       queryClient.setQueryData<GoalsResponse>(queryKey, (old) => {
         if (!old) return old;
         if (includeArchived) {
@@ -222,6 +249,31 @@ export function useGoals(includeArchived = false) {
           };
         }
       });
+
+      // Also update the active goals cache (includeArchived: false)
+      const activeQueryKey = ['goals', false];
+      queryClient.setQueryData<GoalsResponse>(activeQueryKey, (old) => {
+        if (!old) return old;
+        // Add to active goals or update if already exists
+        const existingIndex = old.goals.findIndex(goal => goal.id === data.goal.id);
+        if (existingIndex >= 0) {
+          return {
+            ...old,
+            goals: old.goals.map(goal => 
+              goal.id === data.goal.id ? data.goal : goal
+            ),
+          };
+        } else {
+          return {
+            goals: [...old.goals, data.goal],
+            total: old.total + 1,
+          };
+        }
+      });
+
+      // Invalidate both queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      
       toast.success('Goal restored successfully!');
     },
     onError: (error) => {

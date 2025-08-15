@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UpdateGoalSchema } from '@/types/goals';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { getAuthenticatedUser } from '@/lib/auth/testing';
 
 // Create Supabase client for server-side operations
 async function createServerSupabaseClient() {
@@ -35,7 +34,7 @@ export async function GET(
     const supabase = await createServerSupabaseClient();
     
     // Check authentication
-    const { user, error: authError } = await getAuthenticatedUser(supabase);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -72,7 +71,7 @@ export async function PATCH(
     const supabase = await createServerSupabaseClient();
     
     // Check authentication
-    const { user, error: authError } = await getAuthenticatedUser(supabase);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -124,7 +123,7 @@ export async function DELETE(
     const supabase = await createServerSupabaseClient();
     
     // Check authentication
-    const { user, error: authError } = await getAuthenticatedUser(supabase);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

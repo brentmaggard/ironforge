@@ -11,6 +11,7 @@ import {
   Edit,
   Copy,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -25,7 +26,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateGoalForm } from "@/components/goals/CreateGoalForm";
+import { EditGoalForm } from "@/components/goals/EditGoalForm";
 import { useGoals } from "@/hooks/useGoals";
+import { useGoalProgress, formatProgressForChart } from "@/hooks/useGoalProgress";
 import { Goal, CreateGoal, UpdateGoal, calculateProgress, formatGoalValue } from "@/types/goals";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +53,11 @@ const Goals: React.FC = () => {
     isUpdating,
     isDeleting,
     isArchiving,
+    isReordering,
   } = useGoals(includeArchived);
+
+  // Separate query to check if there are any archived goals (for button visibility)
+  const { goals: allGoals } = useGoals(true);
 
   // Set first goal as selected if none selected and goals exist
   React.useEffect(() => {
@@ -62,6 +69,9 @@ const Goals: React.FC = () => {
   const selectedGoal = goals.find((g) => g.id === selectedGoalId);
   const activeGoals = goals.filter((g) => !g.is_archived);
   const archivedGoals = goals.filter((g) => g.is_archived);
+  
+  // Check if there are any archived goals in the complete list (for button visibility)
+  const hasArchivedGoals = allGoals?.filter((g) => g.is_archived).length > 0;
 
   // Handle goal creation
   const handleCreateGoal = (goalData: CreateGoal) => {
@@ -86,19 +96,91 @@ const Goals: React.FC = () => {
     }
   };
 
+  const handleCopyGoal = (goal: Goal) => {
+    const copiedGoal: CreateGoal = {
+      name: `${goal.name} (Copy)`,
+      description: goal.description,
+      color: goal.color,
+      goal_type: goal.goal_type,
+      exercise_id: goal.exercise_id,
+      exercise_name: goal.exercise_name,
+      target_value: goal.target_value,
+      current_value: 0, // Reset progress for copied goal
+      unit: goal.unit,
+      start_date: new Date().toISOString().split('T')[0], // Set to today
+      target_date: goal.target_date,
+      is_archived: false, // New goal should be active
+      display_order: 0, // Will be set by the API
+    };
+
+    createGoal(copiedGoal, {
+      onSuccess: (newGoal) => {
+        // Select the newly copied goal
+        setSelectedGoalId(newGoal.goal.id);
+      },
+    });
+  };
+
+  // Drag and drop state
+  const [draggedGoalId, setDraggedGoalId] = useState<string | null>(null);
+  const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
+
   // Drag and drop handlers
-  const handleDragStart = (goalId: string) => {
-    // Store dragged goal ID
+  const handleDragStart = (goalId: string, e: React.DragEvent) => {
+    setDraggedGoalId(goalId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', goalId);
   };
 
-  const handleDrop = (targetGoalId: string) => {
-    // Implement reordering logic
-    const goalIds = goals.map(g => g.id);
-    reorderGoals(goalIds);
+  const handleDragOver = (goalId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverGoalId(goalId);
   };
 
-  // Generate mock progress data for charts
-  const generateProgressData = (goal: Goal) => {
+  const handleDragLeave = () => {
+    setDragOverGoalId(null);
+  };
+
+  const handleDrop = (targetGoalId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverGoalId(null);
+    
+    if (!draggedGoalId || draggedGoalId === targetGoalId) {
+      setDraggedGoalId(null);
+      return;
+    }
+
+    // Get current active goals in their display order
+    const currentGoals = [...activeGoals];
+    const draggedIndex = currentGoals.findIndex(g => g.id === draggedGoalId);
+    const targetIndex = currentGoals.findIndex(g => g.id === targetGoalId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedGoalId(null);
+      return;
+    }
+
+    // Reorder the goals array
+    const draggedGoal = currentGoals[draggedIndex];
+    currentGoals.splice(draggedIndex, 1);
+    currentGoals.splice(targetIndex, 0, draggedGoal);
+
+    // Extract the new order of goal IDs
+    const newOrderIds = currentGoals.map(g => g.id);
+    
+    // Call the reorder API
+    reorderGoals(newOrderIds);
+    setDraggedGoalId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedGoalId(null);
+    setDragOverGoalId(null);
+  };
+
+  // Generate mock progress data for charts (fallback when no real data)
+  const generateMockProgressData = (goal: Goal) => {
     const startDate = new Date(goal.start_date || new Date());
     const today = new Date();
     const daysDiff = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -111,6 +193,7 @@ const Goals: React.FC = () => {
       data.push({
         date: date.toISOString().split('T')[0],
         value: Math.round(progress * 100) / 100,
+        formattedValue: `${Math.round(progress * 100) / 100} ${goal.unit}`,
       });
     }
     
@@ -140,7 +223,7 @@ const Goals: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {archivedGoals.length > 0 && (
+          {hasArchivedGoals && (
             <Button
               variant="outline"
               size="sm"
@@ -192,7 +275,10 @@ const Goals: React.FC = () => {
       {!isLoading && goals.length > 0 && !showCreateForm && (
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left column: Goals list */}
-          <div className="space-y-4">
+          <div className={cn(
+            "space-y-4",
+            isReordering && "pointer-events-none opacity-75"
+          )}>
             {/* Active Goals */}
             {activeGoals.map((goal) => (
               <GoalCard
@@ -202,8 +288,13 @@ const Goals: React.FC = () => {
                 onSelect={() => setSelectedGoalId(goal.id)}
                 onArchive={() => handleArchiveGoal(goal.id)}
                 onDelete={() => handleDeleteGoal(goal.id)}
-                onDragStart={() => handleDragStart(goal.id)}
-                onDrop={() => handleDrop(goal.id)}
+                onDragStart={(e) => handleDragStart(goal.id, e)}
+                onDragOver={(e) => handleDragOver(goal.id, e)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(goal.id, e)}
+                onDragEnd={handleDragEnd}
+                isDragging={draggedGoalId === goal.id}
+                isDragOver={dragOverGoalId === goal.id}
                 isArchiving={isArchiving}
                 isDeleting={isDeleting}
               />
@@ -224,6 +315,14 @@ const Goals: React.FC = () => {
                     onSelect={() => setSelectedGoalId(goal.id)}
                     onArchive={() => unarchiveGoal(goal.id)}
                     onDelete={() => handleDeleteGoal(goal.id)}
+                    // Archived goals don't support reordering
+                    onDragStart={() => {}}
+                    onDragOver={() => {}}
+                    onDragLeave={() => {}}
+                    onDrop={() => {}}
+                    onDragEnd={() => {}}
+                    isDragging={false}
+                    isDragOver={false}
                     isArchived
                     isArchiving={isArchiving}
                     isDeleting={isDeleting}
@@ -235,61 +334,18 @@ const Goals: React.FC = () => {
 
           {/* Right column: Selected goal details */}
           {selectedGoal && (
-            <div className="space-y-4">
-              {/* Progress Chart */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">{selectedGoal.name}</h3>
-                  <p className="text-sm text-gray-600">Progress Over Time</p>
-                </div>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsLineChart data={generateProgressData(selectedGoal)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) =>
-                          new Date(value).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        }
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
-                        }
-                        formatter={(value) => [
-                          `${value} ${selectedGoal.unit}`,
-                          "Value"
-                        ]}
-                      />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke={selectedGoal.color || "#3b82f6"}
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Goal Details */}
-              <GoalDetails
-                goal={selectedGoal}
-                onUpdate={(data) => updateGoal({ id: selectedGoal.id, data })}
-                onArchive={() => handleArchiveGoal(selectedGoal.id)}
-                onDelete={() => handleDeleteGoal(selectedGoal.id)}
-                isUpdating={isUpdating}
-                isArchiving={isArchiving}
-                isDeleting={isDeleting}
-              />
-            </div>
+            <SelectedGoalDisplay 
+              goal={selectedGoal}
+              onUpdate={(data) => updateGoal({ id: selectedGoal.id, data })}
+              onArchive={() => handleArchiveGoal(selectedGoal.id)}
+              onDelete={() => handleDeleteGoal(selectedGoal.id)}
+              onCopy={handleCopyGoal}
+              isUpdating={isUpdating}
+              isArchiving={isArchiving}
+              isDeleting={isDeleting}
+              isCopying={isCreating}
+              generateMockProgressData={generateMockProgressData}
+            />
           )}
         </div>
       )}
@@ -323,8 +379,13 @@ interface GoalCardProps {
   onSelect: () => void;
   onArchive: () => void;
   onDelete: () => void;
-  onDragStart?: () => void;
-  onDrop?: () => void;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
   isArchived?: boolean;
   isArchiving?: boolean;
   isDeleting?: boolean;
@@ -337,7 +398,12 @@ function GoalCard({
   onArchive,
   onDelete,
   onDragStart,
+  onDragOver,
+  onDragLeave,
   onDrop,
+  onDragEnd,
+  isDragging = false,
+  isDragOver = false,
   isArchived = false,
   isArchiving = false,
   isDeleting = false,
@@ -347,13 +413,18 @@ function GoalCard({
   return (
     <div
       onClick={onSelect}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className={cn(
-        "flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-colors",
+        "flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200",
         isSelected
           ? "bg-blue-50 border-blue-200"
           : isArchived
           ? "bg-gray-50 border-gray-200 hover:bg-gray-100"
-          : "bg-white border-gray-200 hover:bg-gray-50"
+          : "bg-white border-gray-200 hover:bg-gray-50",
+        isDragging && "opacity-50 scale-95",
+        isDragOver && "bg-blue-100 border-blue-300 border-dashed"
       )}
     >
       {/* Progress Circle */}
@@ -389,11 +460,17 @@ function GoalCard({
 
       {/* Drag Handle */}
       <div
-        className="text-gray-400 cursor-move"
-        draggable
-        onDragStart={onDragStart}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={onDrop}
+        className={cn(
+          "text-gray-400 transition-colors p-1 -m-1",
+          isArchived 
+            ? "cursor-default opacity-50" 
+            : "cursor-move hover:text-gray-600",
+          isDragging && "text-blue-500"
+        )}
+        draggable={!isArchived}
+        onDragStart={!isArchived ? onDragStart : undefined}
+        onDragEnd={!isArchived ? onDragEnd : undefined}
+        onClick={(e) => e.stopPropagation()} // Prevent goal selection when clicking drag handle
       >
         <GripVertical className="w-4 h-4" />
       </div>
@@ -407,9 +484,11 @@ interface GoalDetailsProps {
   onUpdate: (data: UpdateGoal) => void;
   onArchive: () => void;
   onDelete: () => void;
+  onCopy: () => void;
   isUpdating?: boolean;
   isArchiving?: boolean;
   isDeleting?: boolean;
+  isCopying?: boolean;
 }
 
 function GoalDetails({
@@ -417,23 +496,70 @@ function GoalDetails({
   onUpdate,
   onArchive,
   onDelete,
+  onCopy,
   isUpdating = false,
   isArchiving = false,
   isDeleting = false,
+  isCopying = false,
 }: GoalDetailsProps) {
   const progress = calculateProgress(goal.current_value, goal.target_value);
+  const [showProgressForm, setShowProgressForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [progressValue, setProgressValue] = useState(goal.current_value.toString());
+  const [progressNotes, setProgressNotes] = useState('');
+  
+  // Use the goal progress hook specifically for this goal
+  const { addProgress, isAdding } = useGoalProgress(goal.id, 30);
+
+  const handleAddProgress = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = parseFloat(progressValue);
+    
+    if (isNaN(value) || value < 0) {
+      alert('Please enter a valid progress value');
+      return;
+    }
+
+    addProgress({
+      value,
+      notes: progressNotes.trim() || undefined,
+      recorded_at: new Date().toISOString(),
+    }, {
+      onSuccess: () => {
+        setShowProgressForm(false);
+        setProgressValue(value.toString());
+        setProgressNotes('');
+      },
+    });
+  };
+
+  const handleEditGoal = (data: UpdateGoal) => {
+    onUpdate(data);
+    setShowEditForm(false);
+  };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-xl font-semibold">{goal.name}</h3>
-        <Badge 
-          variant={progress === 100 ? "default" : "secondary"}
-          style={{ backgroundColor: progress === 100 ? goal.color : undefined }}
-        >
-          {progress === 100 ? "Complete" : `${Math.round(progress)}% Complete`}
-        </Badge>
-      </div>
+    <>
+      {showEditForm ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <EditGoalForm
+            goal={goal}
+            onSubmit={handleEditGoal}
+            onClose={() => setShowEditForm(false)}
+            isLoading={isUpdating}
+          />
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-xl font-semibold">{goal.name}</h3>
+            <Badge 
+              variant={progress === 100 ? "default" : "secondary"}
+              style={{ backgroundColor: progress === 100 ? goal.color : undefined }}
+            >
+              {progress === 100 ? "Complete" : `${Math.round(progress)}% Complete`}
+            </Badge>
+          </div>
 
       {goal.description && (
         <p className="text-gray-600 text-sm">{goal.description}</p>
@@ -466,8 +592,88 @@ function GoalDetails({
         </div>
       </div>
 
+      {/* Progress Entry Form */}
+      {showProgressForm && (
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium mb-3">Add Progress Entry</h4>
+          <form onSubmit={handleAddProgress} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Current Value ({goal.unit})
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={progressValue}
+                onChange={(e) => setProgressValue(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={`Enter value in ${goal.unit}`}
+                disabled={isAdding}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Notes (optional)
+              </label>
+              <textarea
+                value={progressNotes}
+                onChange={(e) => setProgressNotes(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={2}
+                placeholder="Add any notes about this progress..."
+                disabled={isAdding}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={isAdding}
+                className="flex-1"
+              >
+                {isAdding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Add Progress
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowProgressForm(false)}
+                disabled={isAdding}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="flex space-x-2 pt-4 border-t">
-        <Button variant="outline" size="sm" disabled={isUpdating}>
+        {!showProgressForm && (
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => setShowProgressForm(true)}
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Add Progress
+          </Button>
+        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowEditForm(true)}
+          disabled={isUpdating}
+        >
           <Edit className="w-4 h-4 mr-2" />
           Edit
         </Button>
@@ -484,8 +690,17 @@ function GoalDetails({
           )}
           {goal.is_archived ? "Restore" : "Archive"}
         </Button>
-        <Button variant="outline" size="sm">
-          <Copy className="w-4 h-4 mr-2" />
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onCopy}
+          disabled={isCopying}
+        >
+          {isCopying ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Copy className="w-4 h-4 mr-2" />
+          )}
           Copy
         </Button>
         <Button 
@@ -502,6 +717,146 @@ function GoalDetails({
           Delete
         </Button>
       </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Selected Goal Display Component (handles progress hooks safely)
+interface SelectedGoalDisplayProps {
+  goal: Goal;
+  onUpdate: (data: UpdateGoal) => void;
+  onArchive: () => void;
+  onDelete: () => void;
+  onCopy: (goal: Goal) => void;
+  isUpdating: boolean;
+  isArchiving: boolean;
+  isDeleting: boolean;
+  isCopying: boolean;
+  generateMockProgressData: (goal: Goal) => any[];
+}
+
+function SelectedGoalDisplay({
+  goal,
+  onUpdate,
+  onArchive,
+  onDelete,
+  onCopy,
+  isUpdating,
+  isArchiving,
+  isDeleting,
+  isCopying,
+  generateMockProgressData,
+}: SelectedGoalDisplayProps) {
+  // This hook can be called safely here since this component only renders when goal exists
+  const { 
+    progress: goalProgressData, 
+    isLoading: isLoadingProgress,
+    isError: isProgressError
+  } = useGoalProgress(goal.id, 30);
+
+  // Generate progress data for charts (real data or fallback)
+  const getProgressChartData = (goal: Goal) => {
+    if (goalProgressData && goalProgressData.length > 0) {
+      // Use real progress data
+      return formatProgressForChart(goalProgressData, goal.unit);
+    }
+    
+    // Fallback to mock data if no real progress data exists
+    return generateMockProgressData(goal);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Progress Chart */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">{goal.name}</h3>
+          <p className="text-sm text-gray-600">
+            Progress Over Time
+            {goalProgressData.length > 0 && (
+              <span className="ml-2 text-green-600">
+                ({goalProgressData.length} entries)
+              </span>
+            )}
+          </p>
+        </div>
+        
+        {isLoadingProgress ? (
+          <div className="h-80 flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm text-gray-600">Loading progress data...</span>
+            </div>
+          </div>
+        ) : isProgressError ? (
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center">
+              <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Unable to load progress data</p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsLineChart data={getProgressChartData(goal)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) =>
+                    new Date(value).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  }
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip
+                  labelFormatter={(value) =>
+                    new Date(value).toLocaleDateString()
+                  }
+                  formatter={(value, name, props) => [
+                    props.payload?.formattedValue || `${value} ${goal.unit}`,
+                    "Value"
+                  ]}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={goal.color || "#3b82f6"}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  name={goal.unit}
+                />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        
+        {goalProgressData.length === 0 && !isLoadingProgress && !isProgressError && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">
+              No progress data yet. Add your first progress entry below!
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Goal Details */}
+      <GoalDetails
+        goal={goal}
+        onUpdate={onUpdate}
+        onArchive={onArchive}
+        onDelete={onDelete}
+        onCopy={() => onCopy(goal)}
+        isUpdating={isUpdating}
+        isArchiving={isArchiving}
+        isDeleting={isDeleting}
+        isCopying={isCopying}
+      />
     </div>
   );
 }

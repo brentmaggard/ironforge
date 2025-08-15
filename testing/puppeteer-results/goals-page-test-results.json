@@ -1,0 +1,174 @@
+{
+  "timestamp": "2025-08-15T00:32:44.130Z",
+  "summary": {
+    "passed": 5,
+    "failed": 16,
+    "errors": 14,
+    "successRate": "23.8"
+  },
+  "details": [
+    {
+      "test": "Goals heading visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Page Load and Initial State",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Create New Goal Basic Flow",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Form Validation",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Goal Type Selection",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Exercise Selection",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Color Selection",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Date Selection",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Goal cards are displayed",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Bench Press goal shows correct data",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Goal details panel appears",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Goal Details Panel",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"Edit\"), [data-testid=\"edit-goal\"]' is not a valid selector."
+    },
+    {
+      "test": "Modal Behavior",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Page loads on mobile viewport",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Responsive Design",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Form Reset and Cancel",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "Progress percentages are displayed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Bench Press progress data visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Visual progress indicators present",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "UI Elements and Styling",
+      "passed": false,
+      "details": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "test": "No console errors detected",
+      "passed": false,
+      "details": ""
+    }
+  ],
+  "errors": [
+    {
+      "category": "Console Error",
+      "message": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "category": "Console Error",
+      "message": "Manifest fetch from http://localhost:3000/manifest.json failed, code 404"
+    },
+    {
+      "category": "Test 1",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 2",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 3",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 4",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 5",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 6",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 7",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 9",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"Edit\"), [data-testid=\"edit-goal\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 10",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 11",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 12",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    },
+    {
+      "category": "Test 14",
+      "message": "SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"New Goal\"), [data-testid=\"new-goal-button\"]' is not a valid selector."
+    }
+  ]
+}

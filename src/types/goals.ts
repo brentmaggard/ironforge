@@ -51,6 +51,26 @@ export const ExerciseSchema = z.object({
 
 export type Exercise = z.infer<typeof ExerciseSchema>;
 
+// Goal Progress types
+export const GoalProgressSchema = z.object({
+  id: z.string().uuid(),
+  goal_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  value: z.number().min(0, 'Progress value cannot be negative'),
+  notes: z.string().optional(),
+  recorded_at: z.string(), // ISO date string
+  created_at: z.string().optional(),
+});
+
+export const CreateGoalProgressSchema = GoalProgressSchema.omit({
+  id: true,
+  user_id: true,
+  created_at: true,
+});
+
+export type GoalProgress = z.infer<typeof GoalProgressSchema>;
+export type CreateGoalProgress = z.infer<typeof CreateGoalProgressSchema>;
+
 // Goal type options for the UI
 export const GOAL_TYPE_OPTIONS = [
   { value: 'strength' as const, label: 'Strength', icon: '💪' },
@@ -96,6 +116,15 @@ export interface GoalsResponse {
 
 export interface GoalResponse {
   goal: Goal;
+}
+
+export interface GoalProgressResponse {
+  progress: GoalProgress[];
+  total: number;
+}
+
+export interface CreateGoalProgressResponse {
+  progress: GoalProgress;
 }
 
 // Helper function to calculate goal progress

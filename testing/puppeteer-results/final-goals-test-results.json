@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-08-15T00:37:36.546Z",
+  "summary": {
+    "passed": 20,
+    "failed": 3,
+    "successRate": "87.0%"
+  },
+  "tests": [
+    {
+      "test": "Page loads with correct title",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Goals heading visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Active goals count displayed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Bench Press goal visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Running goal visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Progress percentages visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Current/target values shown",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Target dates visible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "New Goal button found",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Goal creation modal opens",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Goal cards are clickable",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Edit button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Archive button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Copy button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Delete button present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Progress circles visible",
+      "passed": false,
+      "details": ""
+    },
+    {
+      "test": "Chart elements present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Responsive design works on mobile",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Page loads quickly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "DOM ready quickly",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Proper heading structure",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Main landmark present",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "test": "Buttons have accessible content",
+      "passed": true,
+      "details": ""
+    }
+  ]
+}
