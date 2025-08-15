@@ -1,117 +1,97 @@
-// Save as: src/app/(dashboard)/exercises/page.tsx
-// Notes:
-// - Matches IronForge dashboard look & feel: shadcn/ui + Tailwind (dark), lucide-react icons.
-// - Uses mock data and client-side filtering/sorting. Wire up to Supabase later.
-// - Row action menu (⋯) includes: Edit, Duplicate, Move data to another exercise, Delete.
-// - Provides placeholder handlers you can connect to modals/sheets or routes.
+'use client';
 
-'use client'
-
-import * as React from 'react'
-import Link from 'next/link'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { DotsVerticalIcon } from '@radix-ui/react-icons'
-import { Filter, Plus, Search } from 'lucide-react'
-
-// --- Types & Mock Data ------------------------------------------------------
-
-type Exercise = {
-  id: string
-  name: string
-  muscles: string[]
-  workoutsCount: number
-  icon?: string // emoji string
-}
-
-const MOCK: Exercise[] = [
-  { id: 'ex-1', name: '1/2 Kneeling Kettlebell Chop', muscles: ['Abs'], workoutsCount: 4, icon: '🏋️‍♂️' },
-  { id: 'ex-2', name: 'Air Squat', muscles: ['Posterior thighs', 'Glutes', 'Quads'], workoutsCount: 0, icon: '🏋️‍♂️' },
-  { id: 'ex-3', name: 'Arm Across Chest Stretch', muscles: ['Shoulders'], workoutsCount: 0, icon: '🧘' },
-  { id: 'ex-4', name: 'Arm Circles', muscles: ['Shoulders'], workoutsCount: 0, icon: '🌀' },
-  { id: 'ex-5', name: 'Arm Over Arm', muscles: ['Biceps', 'Back'], workoutsCount: 0, icon: '💪' },
-  { id: 'ex-6', name: 'Arnold Press', muscles: ['Shoulders'], workoutsCount: 17, icon: '💪' },
-  { id: 'ex-7', name: 'Assisted Pull-Up', muscles: ['Back'], workoutsCount: 12, icon: '🏋️' },
-]
-
-// --- Utilities ---------------------------------------------------------------
-
-function cn(...classes: (string | false | null | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
-
-// --- Add / Edit Exercise Sheet (placeholder) --------------------------------
-
-function ExerciseSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl">
-        <SheetHeader>
-          <SheetTitle className="text-foreground">Add exercise</SheetTitle>
-        </SheetHeader>
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Name</label>
-            <Input placeholder="e.g., Barbell Bench Press" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Primary muscle groups (comma separated)</label>
-            <Input placeholder="Chest, Triceps, Shoulders" />
-          </div>
-          <div className="pt-2">
-            <button className="w-full border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg">Create exercise</button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
-// --- Page -------------------------------------------------------------------
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { SearchIcon, FilterIcon, ChevronUpIcon, ChevronDownIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
+import { ExerciseFilters } from '@/components/exercises/ExerciseFilters';
+import { useExercises } from '@/hooks/useExercises';
+import { ExerciseFilters as IExerciseFilters, Exercise, getDifficultyLevel, formatMuscleGroups } from '@/types/exercises';
 
 export default function ExercisesPage() {
-  const [query, setQuery] = React.useState('')
-  const [data, setData] = React.useState<Exercise[]>(MOCK)
-  const [sortAsc, setSortAsc] = React.useState(true)
-  const [openSheet, setOpenSheet] = React.useState(false)
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<IExerciseFilters>({});
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'difficulty_level'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase()
-    let rows = !q
-      ? data
-      : data.filter((ex) =>
-          [ex.name, ex.muscles.join(','), String(ex.workoutsCount)]
-            .join(' ')
-            .toLowerCase()
-            .includes(q)
-        )
-    rows = [...rows].sort((a, b) => (sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)))
-    return rows
-  }, [data, query, sortAsc])
+  const {
+    data: exerciseData,
+    isLoading,
+    error,
+    refetch
+  } = useExercises({
+    search,
+    ...filters,
+    sortBy,
+    sortDirection,
+    page: 1,
+    limit: 100
+  });
+
+  // Apply filters with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refetch();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search, filters, sortBy, sortDirection, refetch]);
+
+  const handleFiltersChange = (newFilters: IExerciseFilters) => {
+    setFilters(newFilters);
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setSearch('');
+  };
+
+  const handleSort = (field: 'name' | 'difficulty_level') => {
+    if (sortBy === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const handleRowClick = (exercise: Exercise) => {
+    router.push(`/exercises/${exercise.id}`);
+  };
+
+  const activeFilterCount = Object.values(filters).filter(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'boolean') return true;
+    return value !== undefined && value !== null;
+  }).length;
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-red-600">Error Loading Exercises</CardTitle>
+            <CardDescription>
+              Unable to load exercise database. Please try again later.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => refetch()} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
@@ -120,142 +100,257 @@ export default function ExercisesPage() {
           <CardTitle className="flex items-center justify-between">
             <span className="text-xl">Exercises</span>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => console.log('filter-open')}
-                className="flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg"
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </button>
-              <button
-                onClick={() => setOpenSheet(true)}
-                className="flex items-center gap-2 border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add exercise</span>
-              </button>
+              <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="relative">
+                    <FilterIcon className="h-4 w-4 mr-2" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <Badge className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Exercise Filters</DialogTitle>
+                    <DialogDescription>
+                      Filter exercises by category, equipment, muscle groups, and more.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto px-1">
+                    <ExerciseFilters
+                      filters={filters}
+                      onChange={handleFiltersChange}
+                      categories={exerciseData?.categories || []}
+                      equipment={exerciseData?.equipment || []}
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={clearFilters}
+                      className="flex-1"
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="flex-1"
+                    >
+                      Apply Filters
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardTitle>
+          
           <div className="mt-3 flex items-center gap-2">
             <div className="relative w-full max-w-xl">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search exercises"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search exercises by name or description..."
                 className="pl-9"
               />
             </div>
-            <button
-              onClick={() => setQuery('')}
-              className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
+            <Button
+              onClick={clearFilters}
+              variant="outline"
+              className="px-3 py-2"
             >
               Clear
-            </button>
+            </Button>
+          </div>
+
+          {/* Active Filters Display */}
+          {(search || activeFilterCount > 0) && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {search && (
+                <Badge variant="secondary" className="px-2 py-1">
+                  Search: "{search}"
+                  <button
+                    onClick={() => setSearch('')}
+                    className="ml-2 hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.categories?.map(category => (
+                <Badge key={category} variant="secondary" className="px-2 py-1">
+                  {category}
+                  <button
+                    onClick={() => setFilters(prev => ({
+                      ...prev,
+                      categories: prev.categories?.filter(c => c !== category)
+                    }))}
+                    className="ml-2 hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              {filters.equipment?.map(equipment => (
+                <Badge key={equipment} variant="secondary" className="px-2 py-1">
+                  {equipment}
+                  <button
+                    onClick={() => setFilters(prev => ({
+                      ...prev,
+                      equipment: prev.equipment?.filter(e => e !== equipment)
+                    }))}
+                    className="ml-2 hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Results Summary */}
+          <div className="mt-3">
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? (
+                'Loading exercises...'
+              ) : (
+                `Showing ${exerciseData?.exercises?.length || 0} of ${exerciseData?.total || 0} exercises`
+              )}
+            </p>
           </div>
         </CardHeader>
+        
         <Separator />
+        
         <CardContent className="pt-4">
-          <div className="overflow-hidden rounded-lg border bg-card">
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-card">
-                <TableRow>
-                  <TableHead className="w-[40%] cursor-pointer select-none" onClick={() => setSortAsc((s) => !s)}>
-                    <div className="flex items-center gap-1">
-                      Name
-                      <span className="text-xs text-muted-foreground">{sortAsc ? '↑' : '↓'}</span>
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[15%]">Workouts</TableHead>
-                  <TableHead>Muscle groups</TableHead>
-                  <TableHead className="w-[52px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((ex) => (
-                  <TableRow key={ex.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg leading-none">{ex.icon ?? '🏋️'}</span>
-                        <span className="font-medium text-foreground">{ex.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{ex.workoutsCount}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {ex.muscles.map((m) => (
-                          <Badge key={m} variant="secondary" className="rounded-full">
-                            {m}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <RowActions
-                        onEdit={() => console.log('edit', ex.id)}
-                        onDuplicate={() => console.log('duplicate', ex.id)}
-                        onMoveData={() => console.log('move-data', ex.id)}
-                        onDelete={() => {
-                          console.log('delete', ex.id)
-                          setData((prev) => prev.filter((p) => p.id !== ex.id))
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && (
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 animate-pulse">
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <div className="h-4 bg-muted rounded w-16" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : exerciseData?.exercises?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <SearchIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No exercises found</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                {search || activeFilterCount > 0
+                  ? "Try adjusting your search terms or filters."
+                  : "No exercises are currently available."}
+              </p>
+              {(search || activeFilterCount > 0) && (
+                <Button onClick={clearFilters} variant="outline">
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg border bg-card">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-card">
                   <TableRow>
-                    <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                      No exercises match your search.
-                    </TableCell>
+                    <TableHead 
+                      className="w-[35%] cursor-pointer select-none hover:bg-muted/50" 
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Name
+                        {sortBy === 'name' && (
+                          sortDirection === 'asc' ? 
+                            <ChevronUpIcon className="h-4 w-4" /> : 
+                            <ChevronDownIcon className="h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="w-[15%] cursor-pointer select-none hover:bg-muted/50"
+                      onClick={() => handleSort('difficulty_level')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Difficulty
+                        {sortBy === 'difficulty_level' && (
+                          sortDirection === 'asc' ? 
+                            <ChevronUpIcon className="h-4 w-4" /> : 
+                            <ChevronDownIcon className="h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[20%]">Equipment</TableHead>
+                    <TableHead>Muscle Groups</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {exerciseData?.exercises?.map((exercise) => (
+                    <TableRow 
+                      key={exercise.id} 
+                      className="hover:bg-muted/50 cursor-pointer"
+                      onClick={() => handleRowClick(exercise)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="text-lg">💪</div>
+                          <div>
+                            <div className="font-medium text-foreground">{exercise.name}</div>
+                            <div className="text-sm text-muted-foreground capitalize">
+                              {exercise.default_equipment?.replace('_', ' ')}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {exercise.difficulty_level && (
+                          <div className="flex items-center gap-1">
+                            <div 
+                              className="w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: getDifficultyLevel(exercise.difficulty_level).color }}
+                            />
+                            <span className="text-sm">{getDifficultyLevel(exercise.difficulty_level).label}</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {exercise.available_equipment?.slice(0, 2).map((equipment) => (
+                            <Badge key={equipment} variant="outline" className="text-xs">
+                              {equipment.replace('_', ' ')}
+                            </Badge>
+                          ))}
+                          {exercise.available_equipment && exercise.available_equipment.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{exercise.available_equipment.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {exercise.primary_muscles?.slice(0, 3).map((muscle) => (
+                            <Badge key={muscle} variant="secondary" className="text-xs">
+                              {formatMuscleGroups([muscle])}
+                            </Badge>
+                          ))}
+                          {exercise.primary_muscles && exercise.primary_muscles.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{exercise.primary_muscles.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Add Exercise Sheet */}
-      <ExerciseSheet open={openSheet} onOpenChange={setOpenSheet} />
     </div>
-  )
-}
-
-// --- Row Actions (⋯) --------------------------------------------------------
-
-function RowActions({
-  onEdit,
-  onDuplicate,
-  onMoveData,
-  onDelete,
-}: {
-  onEdit: () => void
-  onDuplicate: () => void
-  onMoveData: () => void
-  onDelete: () => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50"
-          aria-label="More"
-        >
-          <DotsVerticalIcon className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-        <DropdownMenuItem onClick={onDuplicate}>Duplicate</DropdownMenuItem>
-        <DropdownMenuItem onClick={onMoveData}>Move data to another exercise</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  );
 }
